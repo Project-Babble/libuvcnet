@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -73,33 +74,98 @@ public class DeviceHandle : IDisposable
         }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct UvcFormatDescriptor
+    {
+        public IntPtr parent;
+        public IntPtr prev;
+        public IntPtr next;
+        public UvcVsDescriptorSubtype bDescriptorSubtype;
+        public byte bFormatIndex;
+        public byte bNumFrameDescriptors;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+        public byte[] guidfourccFormat; 
+        //  union {
+        //   uint8_t guidFormat[16];
+        //   uint8_t fourccFormat[4];
+        // };
+        public byte bBitsPerPixelbmFlags;
+        //union {
+        //   /** BPP for uncompressed stream */
+        //   uint8_t bBitsPerPixel;
+        //   /** Flags for JPEG stream */
+        //   uint8_t bmFlags;
+        // }; 
+        public byte bDefaultFrameIndex; 
+        public byte bAspectRatioX; 
+        public byte bAspectRatioY; 
+        public byte bmInterlaceFlags; 
+        public byte bCopyProtect; 
+        public byte bVariableSize; 
+        public IntPtr frame_descs; 
+        public IntPtr still_frame_desc;
+        
+        public static UvcFormatDescriptor? Create(IntPtr ptr) => ptr == IntPtr.Zero ? null : Marshal.PtrToStructure<UvcFormatDescriptor>(ptr);
+        
+        public UvcFormatDescriptor? CreatePrevious() => Create(prev);
+        public UvcFormatDescriptor? CreateNext() => Create(next);
+        public UvcFrameDesc? CreateFrameDescs() => UvcFrameDesc.Create(frame_descs);
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
+    private struct UvcFrameDesc 
+    {
+        //TODO: theres a lot more information here thats not used
+        public IntPtr parent;
+        public IntPtr prev;
+        public IntPtr next;
+        public UvcVsDescriptorSubtype bDescriptorSubtype;
+        public byte bFrameIndex;
+        public byte bmCapabilities;
+        public ushort wWidth;
+        public ushort wHeight;
+        public uint dwMinBitRate;
+        public uint dwMaxBitRate;
+        public uint dwMaxVideoFrameBufferSize;
+        public uint dwDefaultFrameInterval;
+        public uint dwMinFrameInterval;
+        public uint dwMaxFrameInterval;
+        public uint dwFrameIntervalStep;
+        public byte bFrameIntervalType;
+        public uint dwBytesPerLine;
+        public IntPtr intervals;
+        
+        public static UvcFrameDesc? Create(IntPtr ptr) => ptr == IntPtr.Zero ? null : Marshal.PtrToStructure<UvcFrameDesc>(ptr);
+        
+        public UvcFrameDesc? CreatePrevious() => Create(prev);
+        public UvcFrameDesc? CreateNext() => Create(next);
+    }
+    
     public IEnumerable<FormatDescriptor> GetStreamControlFormats()
     {
+        var result = new List<FormatDescriptor>();
         var descs = NativeMethods.uvc_get_format_descs(_handle);
-        while (descs != IntPtr.Zero)
+        var current = UvcFormatDescriptor.Create(descs);
+        while (current.HasValue)
         {
-            // access frame_descs field
-            var descriptorSubType = (UvcVsDescriptorSubtype)Marshal.ReadInt32(descs, IntPtr.Size * 3);
-            var numFrameDescriptors = Marshal.ReadByte(descs, IntPtr.Size * 3 + 5);
+            var cur = current.Value;
+            var numFrameDescriptors = cur.bNumFrameDescriptors;
             if (numFrameDescriptors > 0)
             {
-                var frameDescs = Marshal.ReadIntPtr(descs, IntPtr.Size * 3 + 29);
-                while (frameDescs != IntPtr.Zero)
+                var frameDesc = cur.CreateFrameDescs();
+                while (frameDesc.HasValue)
                 {
-                    var width = (int)(ushort)Marshal.ReadInt16(frameDescs, IntPtr.Size * 3 + 6);
-                    var height = (int)(ushort)Marshal.ReadInt16(frameDescs, IntPtr.Size * 3 + 8);
-                    yield return new FormatDescriptor { Width = width, Height = height };
-
-                    // access next field
-                    frameDescs = Marshal.ReadIntPtr(frameDescs, IntPtr.Size * 2);
+                    result.Add(new FormatDescriptor
+                        {
+                            Width = frameDesc.Value.wWidth, 
+                            Height = frameDesc.Value.wHeight
+                        }
+                    );
+                    frameDesc = frameDesc.Value.CreateNext();
                 }
             }
-
-            // access next field
-            descs = Marshal.ReadIntPtr(descs, IntPtr.Size * 2);
         }
-
-        yield break;
+        return result;
     }
 
     public StreamControl GetStreamControlFormatSize(FrameFormat format, int width, int height, int fps)
