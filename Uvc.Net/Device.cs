@@ -11,6 +11,19 @@ public class Device : IDisposable
 {
     private readonly UvcDevice _handle;
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DeviceDescriptor
+    {
+        public ushort VendorId;
+        public ushort ProductId;
+        public ushort ComplianceLevel;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string SerialNumber;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string Manufacturer;
+        [MarshalAs(UnmanagedType.LPStr)]
+        public string Product;
+    }
     internal Device(UvcDevice device)
     {
         _handle = device;
@@ -18,12 +31,13 @@ public class Device : IDisposable
         UvcException.ThrowExceptionForUvcError(error);
         try
         {
-            VendorId = (ushort)Marshal.ReadInt16(descriptor);
-            ProductId = (ushort)Marshal.ReadInt16(descriptor, 2);
-            ComplianceLevel = (ushort)Marshal.ReadInt16(descriptor, 4);
-            SerialNumber = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(descriptor, 6));
-            Manufacturer = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(descriptor, 6 + IntPtr.Size));
-            Product = Marshal.PtrToStringAnsi(Marshal.ReadIntPtr(descriptor, 6 + IntPtr.Size * 2));
+            var des = Marshal.PtrToStructure<DeviceDescriptor>(descriptor);
+            VendorId = des.VendorId;
+            ProductId = des.ProductId;
+            ComplianceLevel = des.ComplianceLevel;
+            SerialNumber = des.SerialNumber;
+            Manufacturer = des.Manufacturer;
+            Product = des.Product;
         }
         finally { NativeMethods.uvc_free_device_descriptor(descriptor); }
     }
