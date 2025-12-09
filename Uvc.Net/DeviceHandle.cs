@@ -149,20 +149,16 @@ public class DeviceHandle : IDisposable
         while (current.HasValue)
         {
             var cur = current.Value;
-            var numFrameDescriptors = cur.bNumFrameDescriptors;
-            if (numFrameDescriptors > 0)
+            var frameDesc = cur.CreateFrameDescs();
+            while (frameDesc.HasValue)
             {
-                var frameDesc = cur.CreateFrameDescs();
-                while (frameDesc.HasValue)
-                {
-                    result.Add(new FormatDescriptor
-                        {
-                            Width = frameDesc.Value.wWidth, 
-                            Height = frameDesc.Value.wHeight
-                        }
-                    );
-                    frameDesc = frameDesc.Value.CreateNext();
-                }
+                result.Add(new FormatDescriptor
+                    {
+                        Width = frameDesc.Value.wWidth, 
+                        Height = frameDesc.Value.wHeight
+                    }
+                );
+                frameDesc = frameDesc.Value.CreateNext();
             }
             current = current.Value.CreateNext();
         }

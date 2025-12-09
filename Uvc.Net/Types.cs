@@ -101,6 +101,15 @@ public struct Frame
     public long TvUsec;
     public IntPtr Source;
     public byte LibraryOwnsData;
+
+    public byte[] GetData()
+    {
+        var dataSize = DataBytes.ToInt32();
+        if (dataSize <= 0) return [];
+        var buffer = new byte[dataSize];
+        Marshal.Copy(Data, buffer, 0, dataSize);
+        return buffer;
+    }
 }
 
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
