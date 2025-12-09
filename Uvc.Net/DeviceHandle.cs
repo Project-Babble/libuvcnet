@@ -164,6 +164,7 @@ public class DeviceHandle : IDisposable
                     frameDesc = frameDesc.Value.CreateNext();
                 }
             }
+            current = current.Value.CreateNext();
         }
         return result;
     }
