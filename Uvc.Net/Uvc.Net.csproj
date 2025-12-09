@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Title>Uvc.NET</Title>
         <PackageId>Project-Babble.Uvc.NET</PackageId>
         <Description>A fork of Uvc.NET, originally made by Gonçalo Lopes, cleaned up and updated for modern .NET</Description>
         <RepositoryUrl>https://github.com/Project-Babble/libuvcnet</RepositoryUrl>
         <PackageLicenseUrl>https://github.com/Project-Babble/libuvcnet/blob/master/LICENSE</PackageLicenseUrl>
         <Authors>Project-Babble</Authors>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
     </PropertyGroup>
 
 </Project>
