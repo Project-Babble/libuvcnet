@@ -155,7 +155,8 @@ public class DeviceHandle : IDisposable
                 result.Add(new FormatDescriptor
                     {
                         Width = frameDesc.Value.wWidth, 
-                        Height = frameDesc.Value.wHeight
+                        Height = frameDesc.Value.wHeight,
+                        Fps = (int)(10000000 / frameDesc.Value.dwDefaultFrameInterval)
                     }
                 );
                 frameDesc = frameDesc.Value.CreateNext();
