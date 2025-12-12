@@ -156,7 +156,13 @@ public class DeviceHandle : IDisposable
                     {
                         Width = frameDesc.Value.wWidth, 
                         Height = frameDesc.Value.wHeight,
-                        Fps = (int)(10000000 / frameDesc.Value.dwDefaultFrameInterval)
+                        Fps = (int)(10000000u / frameDesc.Value.dwDefaultFrameInterval),
+                        Format = frameDesc.Value.bDescriptorSubtype switch
+                        {
+                            UvcVsDescriptorSubtype.UVC_VS_FORMAT_MJPEG => FrameFormat.Mjpeg,
+                            UvcVsDescriptorSubtype.UVC_VS_FRAME_MJPEG => FrameFormat.Mjpeg,
+                            _ => FrameFormat.Any
+                        }
                     }
                 );
                 frameDesc = frameDesc.Value.CreateNext();
